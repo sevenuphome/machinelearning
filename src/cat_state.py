@@ -1,0 +1,105 @@
+import time
+import random
+from dataclasses import dataclass, field
+
+
+@dataclass
+class CatState:
+    """The cat's internal state — hunger, energy, mood, curiosity, bond level."""
+
+    # Core needs (0.0 = empty/none, 1.0 = full/max)
+    hunger: float = 0.3       # 0 = full, 1 = starving
+    energy: float = 0.8       # 0 = exhausted, 1 = fully rested
+    happiness: float = 0.5    # 0 = miserable, 1 = very happy
+    curiosity: float = 0.5    # 0 = bored, 1 = very curious
+    bond_level: float = 0.1   # 0 = stranger, 1 = best friend
+
+    # Mood is derived from the combination of states
+    # Possible moods: happy, playful, sleepy, hungry, annoyed, curious, content
+    _last_update: float = field(default_factory=time.time, repr=False)
+
+    # Decay/growth rates per second
+    HUNGER_RATE = 0.002       # Gets hungrier over time
+    ENERGY_DECAY = 0.001      # Gets tired over time
+    CURIOSITY_RATE = 0.0015   # Gets more curious over time
+    HAPPINESS_DECAY = 0.0005  # Happiness slowly fades
+    BOND_DECAY = 0.0001       # Bond slowly weakens without interaction
+
+    def clamp(self, value: float) -> float:
+        return max(0.0, min(1.0, value))
+
+    def tick(self):
+        """Update states based on elapsed time since last update."""
+        now = time.time()
+        elapsed = now - self._last_update
+        self._last_update = now
+
+        self.hunger = self.clamp(self.hunger + self.HUNGER_RATE * elapsed)
+        self.energy = self.clamp(self.energy - self.ENERGY_DECAY * elapsed)
+        self.curiosity = self.clamp(self.curiosity + self.CURIOSITY_RATE * elapsed)
+        self.happiness = self.clamp(self.happiness - self.HAPPINESS_DECAY * elapsed)
+        self.bond_level = self.clamp(self.bond_level - self.BOND_DECAY * elapsed)
+
+        # Hunger and tiredness reduce happiness
+        if self.hunger > 0.7:
+            self.happiness = self.clamp(self.happiness - 0.001 * elapsed)
+        if self.energy < 0.2:
+            self.happiness = self.clamp(self.happiness - 0.001 * elapsed)
+
+    def apply_action(self, action: str):
+        """Apply the effects of a user action on cat state."""
+        effects = {
+            "feed": {"hunger": -0.4, "happiness": 0.1, "bond_level": 0.05},
+            "pet": {"happiness": 0.2, "bond_level": 0.08, "energy": -0.02},
+            "play": {"happiness": 0.3, "energy": -0.15, "curiosity": -0.2, "bond_level": 0.1},
+            "talk": {"happiness": 0.05, "bond_level": 0.03, "curiosity": 0.05},
+            "sleep": {"energy": 0.5, "hunger": 0.1},
+            "explore": {"curiosity": -0.3, "energy": -0.1, "happiness": 0.1},
+        }
+
+        if action not in effects:
+            return
+
+        for attr, delta in effects[action].items():
+            current = getattr(self, attr)
+            # Add some randomness to make it feel alive
+            noise = random.uniform(-0.03, 0.03)
+            setattr(self, attr, self.clamp(current + delta + noise))
+
+    @property
+    def mood(self) -> str:
+        """Derive the current mood from internal states."""
+        if self.energy < 0.2:
+            return "sleepy"
+        if self.hunger > 0.7:
+            return "hungry"
+        if self.happiness < 0.2:
+            return "annoyed"
+        if self.curiosity > 0.7:
+            return "curious"
+        if self.happiness > 0.7 and self.energy > 0.5:
+            return "playful"
+        if self.happiness > 0.5:
+            return "happy"
+        return "content"
+
+    @property
+    def state_vector(self) -> list[float]:
+        """Return state as a list for ML input."""
+        return [self.hunger, self.energy, self.happiness, self.curiosity, self.bond_level]
+
+    def summary(self) -> str:
+        """Human-readable state summary."""
+        bars = {
+            "hunger": self.hunger,
+            "energy": self.energy,
+            "happiness": self.happiness,
+            "curiosity": self.curiosity,
+            "bond": self.bond_level,
+        }
+        lines = [f"  Mood: {self.mood}"]
+        for name, val in bars.items():
+            filled = int(val * 10)
+            bar = "█" * filled + "░" * (10 - filled)
+            lines.append(f"  {name:10s} [{bar}] {val:.0%}")
+        return "\n".join(lines)
