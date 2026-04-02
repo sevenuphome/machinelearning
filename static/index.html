@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐱 Cat Brain AI</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: linear-gradient(135deg, #fce4ec, #f3e5f5, #e8eaf6);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  color: #333;
+}
+
+h1 {
+  font-size: 1.8em;
+  margin-bottom: 5px;
+  background: linear-gradient(135deg, #e91e63, #9c27b0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle { font-size: 0.9em; color: #888; margin-bottom: 20px; }
+
+/* Cat Container */
+.cat-area {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  margin: 10px auto;
+}
+
+/* Cat Body */
+.cat {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: all 0.5s ease;
+}
+
+.cat-body {
+  width: 120px;
+  height: 100px;
+  background: #ff9800;
+  border-radius: 50% 50% 45% 45%;
+  position: relative;
+}
+
+/* Stripes */
+.cat-body::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  width: 80px;
+  height: 6px;
+  background: #e65100;
+  border-radius: 3px;
+  box-shadow: 0 15px 0 #e65100, 0 30px 0 #e65100;
+}
+
+/* Ears */
+.ear {
+  position: absolute;
+  top: -20px;
+  width: 0;
+  height: 0;
+  border-left: 18px solid transparent;
+  border-right: 18px solid transparent;
+  border-bottom: 30px solid #ff9800;
+}
+.ear-left { left: 10px; }
+.ear-right { right: 10px; }
+.ear::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 16px solid #ffb74d;
+}
+
+/* Eyes */
+.eyes {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 25px;
+}
+
+.eye {
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+}
+
+.pupil {
+  width: 12px;
+  height: 14px;
+  background: #333;
+  border-radius: 50%;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  transition: all 0.3s ease;
+}
+
+.pupil::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+
+/* Nose & Mouth */
+.nose {
+  position: absolute;
+  top: 55px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 7px;
+  background: #e91e63;
+  border-radius: 50% 50% 40% 40%;
+}
+
+.mouth {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 10px;
+  border-bottom: 2px solid #795548;
+  border-radius: 0 0 50% 50%;
+}
+
+/* Whiskers */
+.whiskers {
+  position: absolute;
+  top: 52px;
+  width: 100%;
+}
+.whisker {
+  position: absolute;
+  width: 35px;
+  height: 2px;
+  background: #795548;
+  border-radius: 1px;
+}
+.whisker-l1 { left: -15px; top: 0; transform: rotate(-10deg); }
+.whisker-l2 { left: -18px; top: 8px; transform: rotate(5deg); }
+.whisker-r1 { right: -15px; top: 0; transform: rotate(10deg); }
+.whisker-r2 { right: -18px; top: 8px; transform: rotate(-5deg); }
+
+/* Tail */
+.tail {
+  position: absolute;
+  bottom: 30px;
+  right: -25px;
+  width: 50px;
+  height: 60px;
+  border-right: 8px solid #ff9800;
+  border-top: 8px solid #ff9800;
+  border-radius: 0 50px 0 0;
+  animation: tailWag 2s ease-in-out infinite;
+}
+
+@keyframes tailWag {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(15deg); }
+}
+
+/* Paws */
+.paws {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 30px;
+}
+.paw {
+  width: 22px;
+  height: 12px;
+  background: #ffb74d;
+  border-radius: 50%;
+}
+
+/* Mood Animations */
+.cat.happy .tail { animation: tailWag 1s ease-in-out infinite; }
+.cat.happy { animation: bounce 1s ease infinite; }
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-8px); }
+}
+
+.cat.playful { animation: playfulBounce 0.6s ease infinite; }
+@keyframes playfulBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+  25% { transform: translateX(-50%) translateY(-15px) rotate(-5deg); }
+  75% { transform: translateX(-50%) translateY(-10px) rotate(5deg); }
+}
+
+.cat.sleepy .eye { height: 6px; }
+.cat.sleepy .pupil { display: none; }
+.cat.sleepy { animation: sleepyNod 3s ease-in-out infinite; }
+@keyframes sleepyNod {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(5px); }
+}
+
+.cat.hungry .pupil { width: 16px; height: 16px; top: 3px; left: 3px; }
+.cat.hungry { animation: hungryShake 0.5s ease infinite; }
+@keyframes hungryShake {
+  0%, 100% { transform: translateX(-50%); }
+  25% { transform: translateX(calc(-50% - 3px)); }
+  75% { transform: translateX(calc(-50% + 3px)); }
+}
+
+.cat.annoyed .ear-left { transform: rotate(-20deg); }
+.cat.annoyed .ear-right { transform: rotate(20deg); }
+.cat.annoyed .pupil { width: 6px; height: 18px; top: 2px; left: 8px; }
+.cat.annoyed .tail { animation: tailFlick 0.4s ease infinite; }
+@keyframes tailFlick {
+  0%, 100% { transform: rotate(-20deg); }
+  50% { transform: rotate(30deg); }
+}
+
+.cat.curious .pupil { width: 16px; height: 16px; top: 3px; left: 3px; }
+.cat.curious { animation: curiousTilt 2s ease-in-out infinite; }
+@keyframes curiousTilt {
+  0%, 100% { transform: translateX(-50%) rotate(0deg); }
+  50% { transform: translateX(-50%) rotate(10deg); }
+}
+
+/* Zzz for sleepy */
+.zzz {
+  position: absolute;
+  top: 0;
+  right: 10px;
+  font-size: 1.5em;
+  opacity: 0;
+  display: none;
+}
+.cat.sleepy .zzz {
+  display: block;
+  animation: floatUp 2s ease-in-out infinite;
+}
+@keyframes floatUp {
+  0% { opacity: 0; transform: translateY(0); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-30px); }
+}
+
+/* Speech Bubble */
+.speech {
+  background: white;
+  border-radius: 20px;
+  padding: 12px 18px;
+  margin: 0 auto 15px;
+  max-width: 320px;
+  min-height: 50px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  position: relative;
+  text-align: center;
+  font-size: 0.95em;
+  line-height: 1.5;
+  transition: opacity 0.3s;
+}
+.speech::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 12px solid white;
+}
+
+/* Status Bars */
+.status-panel {
+  background: white;
+  border-radius: 16px;
+  padding: 15px 20px;
+  margin: 15px auto;
+  max-width: 340px;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  font-size: 0.85em;
+}
+
+.stat-icon { width: 24px; text-align: center; margin-right: 8px; }
+.stat-label { width: 70px; color: #666; }
+.stat-bar {
+  flex: 1;
+  height: 10px;
+  background: #eee;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.stat-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.5s ease, background 0.5s ease;
+}
+.stat-hunger .stat-fill { background: linear-gradient(90deg, #4caf50, #ff9800); }
+.stat-energy .stat-fill { background: linear-gradient(90deg, #ff5722, #ffeb3b); }
+.stat-happiness .stat-fill { background: linear-gradient(90deg, #9e9e9e, #e91e63); }
+.stat-curiosity .stat-fill { background: linear-gradient(90deg, #607d8b, #03a9f4); }
+.stat-bond .stat-fill { background: linear-gradient(90deg, #bdbdbd, #e91e63); }
+
+.mood-badge {
+  text-align: center;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.relationship {
+  text-align: center;
+  font-size: 0.8em;
+  color: #999;
+  margin-top: 8px;
+}
+
+/* Buttons */
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px auto;
+  max-width: 360px;
+}
+
+.btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+.btn:active { transform: translateY(0); }
+
+.btn-feed { background: linear-gradient(135deg, #ff9800, #ff5722); color: white; }
+.btn-pet { background: linear-gradient(135deg, #e91e63, #ad1457); color: white; }
+.btn-play { background: linear-gradient(135deg, #2196f3, #1565c0); color: white; }
+.btn-talk { background: linear-gradient(135deg, #9c27b0, #6a1b9a); color: white; }
+.btn-wait { background: linear-gradient(135deg, #607d8b, #455a64); color: white; }
+
+.footer { margin-top: 20px; font-size: 0.75em; color: #bbb; }
+.footer a { color: #e91e63; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<h1>🐱 Cat Brain AI</h1>
+<p class="subtitle">Virtual Pet with a Mind — powered by ML</p>
+
+<div class="speech" id="speech">สวัสดี! ฉันชื่อน้องเหมียว~ ลองเล่นกับฉันสิ!</div>
+
+<div class="cat-area">
+  <div class="cat content" id="cat">
+    <div class="zzz">💤</div>
+    <div class="cat-body">
+      <div class="ear ear-left"></div>
+      <div class="ear ear-right"></div>
+      <div class="eyes">
+        <div class="eye"><div class="pupil"></div></div>
+        <div class="eye"><div class="pupil"></div></div>
+      </div>
+      <div class="nose"></div>
+      <div class="mouth"></div>
+      <div class="whiskers">
+        <div class="whisker whisker-l1"></div>
+        <div class="whisker whisker-l2"></div>
+        <div class="whisker whisker-r1"></div>
+        <div class="whisker whisker-r2"></div>
+      </div>
+    </div>
+    <div class="tail"></div>
+    <div class="paws">
+      <div class="paw"></div>
+      <div class="paw"></div>
+    </div>
+  </div>
+</div>
+
+<div class="status-panel">
+  <div class="mood-badge" id="mood">😺 อารมณ์: content</div>
+  <div class="stat-row stat-hunger">
+    <span class="stat-icon">🍖</span>
+    <span class="stat-label">ความหิว</span>
+    <div class="stat-bar"><div class="stat-fill" id="bar-hunger" style="width:30%"></div></div>
+  </div>
+  <div class="stat-row stat-energy">
+    <span class="stat-icon">⚡</span>
+    <span class="stat-label">พลังงาน</span>
+    <div class="stat-bar"><div class="stat-fill" id="bar-energy" style="width:80%"></div></div>
+  </div>
+  <div class="stat-row stat-happiness">
+    <span class="stat-icon">💖</span>
+    <span class="stat-label">ความสุข</span>
+    <div class="stat-bar"><div class="stat-fill" id="bar-happiness" style="width:50%"></div></div>
+  </div>
+  <div class="stat-row stat-curiosity">
+    <span class="stat-icon">🔍</span>
+    <span class="stat-label">อยากรู้</span>
+    <div class="stat-bar"><div class="stat-fill" id="bar-curiosity" style="width:50%"></div></div>
+  </div>
+  <div class="stat-row stat-bond">
+    <span class="stat-icon">❤️</span>
+    <span class="stat-label">ความผูกพัน</span>
+    <div class="stat-bar"><div class="stat-fill" id="bar-bond" style="width:10%"></div></div>
+  </div>
+  <div class="relationship" id="relationship">เล่นด้วยกัน 0 ครั้ง</div>
+</div>
+
+<div class="buttons">
+  <button class="btn btn-feed" onclick="doAction('feed')">🍖 ให้อาหาร</button>
+  <button class="btn btn-pet" onclick="doAction('pet')">🤚 ลูบหัว</button>
+  <button class="btn btn-play" onclick="doAction('play')">🧶 เล่นด้วย</button>
+  <button class="btn btn-talk" onclick="doAction('talk')">💬 พูดคุย</button>
+  <button class="btn btn-wait" onclick="doAction('wait')">⏳ รอดู</button>
+</div>
+
+<p class="footer">
+  🧠 ML Brain (DQN) •
+  <a href="https://github.com/sevenuphome/machinelearning" target="_blank">GitHub</a>
+</p>
+
+<script>
+const SESSION_ID = crypto.randomUUID();
+const cat = document.getElementById('cat');
+const speech = document.getElementById('speech');
+const mood = document.getElementById('mood');
+
+const MOOD_EMOJI = {
+  happy: '😸', playful: '😺', content: '😌',
+  sleepy: '😴', hungry: '🍖', annoyed: '😾', curious: '🧐'
+};
+
+const MOOD_TH = {
+  happy: 'มีความสุข', playful: 'ขี้เล่น', content: 'พอใจ',
+  sleepy: 'ง่วงนอน', hungry: 'หิวข้าว', annoyed: 'หงุดหงิด', curious: 'อยากรู้อยากเห็น'
+};
+
+let busy = false;
+
+async function doAction(action) {
+  if (busy) return;
+  busy = true;
+  document.querySelectorAll('.btn').forEach(b => b.style.opacity = '0.6');
+
+  try {
+    const res = await fetch('/api/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: SESSION_ID, action })
+    });
+    const data = await res.json();
+    updateUI(data);
+  } catch (e) {
+    speech.textContent = '⚠️ เกิดข้อผิดพลาด ลองใหม่อีกครั้ง';
+  }
+
+  document.querySelectorAll('.btn').forEach(b => b.style.opacity = '1');
+  busy = false;
+}
+
+function updateUI(data) {
+  // Speech
+  speech.textContent = data.text;
+
+  // Cat mood animation
+  cat.className = 'cat ' + data.mood;
+
+  // Mood badge
+  const emoji = MOOD_EMOJI[data.mood] || '😺';
+  const th = MOOD_TH[data.mood] || data.mood;
+  mood.textContent = `${emoji} อารมณ์: ${th}`;
+
+  // Status bars
+  const s = data.state;
+  document.getElementById('bar-hunger').style.width = (s.hunger * 100) + '%';
+  document.getElementById('bar-energy').style.width = (s.energy * 100) + '%';
+  document.getElementById('bar-happiness').style.width = (s.happiness * 100) + '%';
+  document.getElementById('bar-curiosity').style.width = (s.curiosity * 100) + '%';
+  document.getElementById('bar-bond').style.width = (s.bond * 100) + '%';
+
+  // Relationship
+  const r = data.relationship;
+  const rel = document.getElementById('relationship');
+  rel.textContent = `เล่นด้วยกัน ${r.total} ครั้ง • ความสุข ${Math.round(r.positivity * 100)}%`;
+}
+</script>
+</body>
+</html>
