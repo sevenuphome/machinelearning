@@ -15,31 +15,47 @@ from src.memory import CatMemory
 # Cat names for random selection
 CAT_NAMES = ["มิโกะ", "โมจิ", "ซูชิ", "ทามะ", "ลูน่า", "มาเมะ", "คุโระ", "ชิโร่"]
 
-USER_COMMANDS = {
-    "feed":    "ให้อาหาร",
-    "pet":     "ลูบหัว",
-    "play":    "เล่นด้วย",
-    "talk":    "พูดคุย",
-    "look":    "ดูสถานะ",
-    "wait":    "รอ (ให้เวลาผ่าน)",
-    "help":    "แสดงคำสั่งทั้งหมด",
-    "quit":    "ออกจากเกม",
-}
+MENU_OPTIONS = [
+    ("feed", "🍖 ให้อาหาร"),
+    ("pet",  "🤚 ลูบหัว"),
+    ("play", "🧶 เล่นด้วย"),
+    ("talk", "💬 พูดคุย"),
+    ("wait", "⏳ รอ (ดูแมวทำอะไร)"),
+    ("look", "👀 ดูสถานะ"),
+    ("quit", "👋 ออกจากเกม"),
+]
 
 
 def print_banner(cat_name: str):
     print(f"""
-╔══════════════════════════════════════╗
-║     🐱 Cat Brain AI — {cat_name:6s}       ║
-║     Virtual Pet with a Mind         ║
-╚══════════════════════════════════════╝
+  ╔══════════════════════════════════════╗
+  ║     🐱 Cat Brain AI — {cat_name:6s}       ║
+  ║     Virtual Pet with a Mind         ║
+  ╚══════════════════════════════════════╝
+
+       /\\_/\\
+      ( o.o )   สวัสดี! ฉันชื่อ {cat_name}
+       > ^ <
+      /|   |\\
+     (_|   |_)
 """)
 
 
-def print_help():
-    print("\n  คำสั่งที่ใช้ได้:")
-    for cmd, desc in USER_COMMANDS.items():
-        print(f"    {cmd:8s} — {desc}")
+CAT_FACE = {
+    "happy":    "  ( ^.^ )",
+    "playful":  "  ( >w< )",
+    "content":  "  ( -.- )",
+    "sleepy":   "  ( =.= ) zzz",
+    "hungry":   "  ( >o< )",
+    "annoyed":  "  ( >.< )",
+    "curious":  "  ( o.O )",
+}
+
+
+def print_menu():
+    print()
+    for i, (_, label) in enumerate(MENU_OPTIONS, 1):
+        print(f"    {i}. {label}")
     print()
 
 
@@ -60,74 +76,69 @@ def main():
 
     print_banner(cat_name)
     print(f"  {cat_name} เดินเข้ามาหา... ดวงตากลมโตมองอย่างสงสัย")
-    print(f"  แมวตัวนี้ดูมีนิสัยเป็นของตัวเอง\n")
-    print_help()
+    print(f"  แมวตัวนี้ดูมีนิสัยเป็นของตัวเอง")
 
     # Show initial state
-    print(f"  --- สถานะของ {cat_name} ---")
+    print(f"\n  --- สถานะของ {cat_name} ---")
     print(state.summary())
-    print()
 
     while True:
+        print_menu()
         try:
-            user_input = input(f"  [{cat_name}] > ").strip().lower()
+            choice = input(f"  [{cat_name}] เลือก (1-{len(MENU_OPTIONS)}): ").strip()
         except (EOFError, KeyboardInterrupt):
             print(f"\n\n  {cat_name} มองตามขณะที่คุณเดินจากไป... เมี้ยว~")
             break
 
-        if not user_input:
+        if not choice.isdigit() or not (1 <= int(choice) <= len(MENU_OPTIONS)):
+            print(f"  กรุณาเลือก 1-{len(MENU_OPTIONS)}")
             continue
 
-        if user_input == "quit":
+        cmd, _ = MENU_OPTIONS[int(choice) - 1]
+
+        if cmd == "quit":
             print(f"\n  {cat_name} มองตามขณะที่คุณเดินจากไป... เมี้ยว~")
             break
 
-        if user_input == "help":
-            print_help()
-            continue
-
-        if user_input == "look":
+        if cmd == "look":
             state.tick()
             print(f"\n  --- สถานะของ {cat_name} ---")
             print(state.summary())
             print(f"\n  --- ความสัมพันธ์ ---")
             print(memory.relationship_summary())
-            print()
             continue
 
-        if user_input == "wait":
+        if cmd == "wait":
             state.tick()
-            # Autonomous behavior
             cat_action = brain.decide_response(state, memory, user_action=None)
             text = brain.get_action_text(cat_action)
+            face = CAT_FACE.get(state.mood, "  ( o.o )")
             print(f"\n  (เวลาผ่านไป...)")
-            print(f"  {text}\n")
+            print(f"  /\\_/\\")
+            print(f" {face}")
+            print(f"  > ^ <")
+            print(f"  {text}")
             continue
 
-        if user_input not in ("feed", "pet", "play", "talk"):
-            print(f"  ไม่เข้าใจคำสั่ง '{user_input}' — พิมพ์ 'help' เพื่อดูคำสั่ง\n")
-            continue
-
-        # Process user action
+        # Process user action (feed, pet, play, talk)
         state.tick()
-        cat_action = brain.decide_response(state, memory, user_action=user_input)
+        cat_action = brain.decide_response(state, memory, user_action=cmd)
         was_positive = brain.was_positive_interaction(state, cat_action)
 
-        # Apply effects to cat state
-        state.apply_action(user_input)
+        state.apply_action(cmd)
+        memory.record(cmd, state.mood, was_positive)
 
-        # Record in memory
-        memory.record(user_input, state.mood, was_positive)
-
-        # Update bond based on interaction quality
         if was_positive:
             state.bond_level = state.clamp(state.bond_level + 0.02)
         else:
             state.bond_level = state.clamp(state.bond_level - 0.01)
 
-        # Show cat's response
         text = brain.get_action_text(cat_action)
-        print(f"\n  {text}\n")
+        face = CAT_FACE.get(state.mood, "  ( o.o )")
+        print(f"\n  /\\_/\\")
+        print(f" {face}")
+        print(f"  > ^ <")
+        print(f"  {text}")
 
 
 if __name__ == "__main__":
