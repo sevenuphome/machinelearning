@@ -64,22 +64,7 @@ def do_action(req: ActionRequest):
 
     text = _brain.get_action_text(cat_action)
 
-    return {
-        "cat_action": cat_action,
-        "text": text,
-        "mood": state.mood,
-        "state": {
-            "hunger": round(state.hunger, 2),
-            "energy": round(state.energy, 2),
-            "happiness": round(state.happiness, 2),
-            "curiosity": round(state.curiosity, 2),
-            "bond": round(state.bond_level, 2),
-        },
-        "relationship": {
-            "total": memory.total_interactions,
-            "positivity": round(memory.recent_positive_ratio, 2),
-        },
-    }
+    return _build_response(state, memory, cat_action=cat_action, text=text)
 
 
 @app.get("/api/state")
@@ -88,8 +73,18 @@ def get_state(session_id: str):
     state: CatState = session["state"]
     memory: CatMemory = session["memory"]
     state.tick()
+    return _build_response(state, memory)
+
+
+def _build_response(state: CatState, memory: CatMemory, cat_action: str = "", text: str = "") -> dict:
+    from datetime import datetime
     return {
+        "cat_action": cat_action,
+        "text": text,
         "mood": state.mood,
+        "time_period": state.time_period,
+        "time_period_th": state.time_period_th,
+        "hour": datetime.now().hour,
         "state": {
             "hunger": round(state.hunger, 2),
             "energy": round(state.energy, 2),

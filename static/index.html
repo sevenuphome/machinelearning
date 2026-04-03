@@ -16,7 +16,24 @@ body {
   align-items: center;
   padding: 20px;
   color: #333;
+  transition: background 1s ease;
 }
+
+body.dawn { background: linear-gradient(135deg, #ffe0b2, #ffccbc, #fff3e0); }
+body.morning { background: linear-gradient(135deg, #fce4ec, #f3e5f5, #e8eaf6); }
+body.afternoon { background: linear-gradient(135deg, #fff9c4, #ffe0b2, #ffecb3); }
+body.evening { background: linear-gradient(135deg, #f3e5f5, #e1bee7, #ce93d8); }
+body.night { background: linear-gradient(135deg, #283593, #1a237e, #311b92); color: #e0e0e0; }
+body.late_night { background: linear-gradient(135deg, #0d0d2b, #1a1a40, #16213e); color: #bbb; }
+
+body.night .status-panel,
+body.late_night .status-panel { background: rgba(255,255,255,0.1); }
+body.night .speech,
+body.late_night .speech { background: rgba(255,255,255,0.15); color: #e0e0e0; }
+body.night .speech::after { border-top-color: rgba(255,255,255,0.15); }
+body.late_night .speech::after { border-top-color: rgba(255,255,255,0.15); }
+body.night .stat-label, body.late_night .stat-label { color: #aaa; }
+body.night .relationship, body.late_night .relationship { color: #888; }
 
 h1 {
   font-size: 1.8em;
@@ -381,6 +398,15 @@ h1 {
 .btn-talk { background: linear-gradient(135deg, #9c27b0, #6a1b9a); color: white; }
 .btn-wait { background: linear-gradient(135deg, #607d8b, #455a64); color: white; }
 
+.time-badge {
+  background: rgba(255,255,255,0.6);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  margin-bottom: 10px;
+  backdrop-filter: blur(10px);
+}
+
 .footer { margin-top: 20px; font-size: 0.75em; color: #bbb; }
 .footer a { color: #e91e63; text-decoration: none; }
 </style>
@@ -389,6 +415,7 @@ h1 {
 
 <h1>🐱 Cat Brain AI</h1>
 <p class="subtitle">Virtual Pet with a Mind — powered by ML</p>
+<div class="time-badge" id="time-badge">🌅 เช้า</div>
 
 <div class="speech" id="speech">สวัสดี! ฉันชื่อน้องเหมียว~ ลองเล่นกับฉันสิ!</div>
 
@@ -478,6 +505,11 @@ const MOOD_TH = {
   sleepy: 'ง่วงนอน', hungry: 'หิวข้าว', annoyed: 'หงุดหงิด', curious: 'อยากรู้อยากเห็น'
 };
 
+const TIME_EMOJI = {
+  dawn: '🌅', morning: '☀️', afternoon: '🌤️',
+  evening: '🌆', night: '🌙', late_night: '🌑'
+};
+
 let busy = false;
 
 async function doAction(action) {
@@ -525,6 +557,14 @@ function updateUI(data) {
   const r = data.relationship;
   const rel = document.getElementById('relationship');
   rel.textContent = `เล่นด้วยกัน ${r.total} ครั้ง • ความสุข ${Math.round(r.positivity * 100)}%`;
+
+  // Time of day
+  if (data.time_period) {
+    document.body.className = data.time_period;
+    const tEmoji = TIME_EMOJI[data.time_period] || '🕐';
+    const badge = document.getElementById('time-badge');
+    badge.textContent = `${tEmoji} ช่วง${data.time_period_th} (${String(data.hour).padStart(2,'0')}:00 น.)`;
+  }
 }
 </script>
 </body>

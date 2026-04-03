@@ -143,7 +143,7 @@ class RuleBrain:
         return "stare"
 
     def _autonomous_action(self, state: CatState, memory: CatMemory) -> str:
-        """What does the cat do on its own?"""
+        """What does the cat do on its own? Influenced by time of day."""
 
         # Urgent needs first
         if state.hunger > 0.8:
@@ -151,13 +151,31 @@ class RuleBrain:
         if state.energy < 0.15:
             return "nap"
 
-        # State-driven behavior
+        period = state.time_period
+
+        # Time-of-day behavior
+        if period == "late_night":
+            return random.choice(["nap", "nap", "stare"])  # Mostly sleeping
+        if period == "night":
+            return random.choice(["nap", "nap", "stare", "explore"])  # Winding down
+        if period == "dawn":
+            return random.choice(["stare", "meow", "explore"])  # Waking up
+        if period == "afternoon":
+            if state.energy < 0.5:
+                return "nap"  # Afternoon nap
+            return random.choice(["nap", "stare", "explore"])
+
+        # State-driven behavior (morning/evening — active periods)
         if state.mood == "curious" and state.energy > 0.3:
             return "explore"
         if state.mood == "playful" and state.energy > 0.4:
             return "play_alone"
         if state.mood == "happy" and state.bond_level > 0.5:
             return random.choice(["purr", "rub"])
+
+        # Evening is extra playful
+        if period == "evening" and state.energy > 0.3:
+            return random.choice(["play_alone", "explore", "meow"])
 
         # Neglect response
         if memory.neglect_level > 0.7 and state.bond_level > 0.3:

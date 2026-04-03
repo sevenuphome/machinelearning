@@ -1,6 +1,36 @@
 import time
 import random
 from dataclasses import dataclass, field
+from datetime import datetime
+
+
+# Time-of-day periods
+TIME_PERIODS = {
+    "dawn":      (5, 7),    # ตื่นเช้า ยังงัวเงีย
+    "morning":   (7, 12),   # ตื่นตัว อยากรู้อยากเห็น
+    "afternoon": (12, 16),  # หลังกินข้าวเที่ยง ง่วง
+    "evening":   (16, 21),  # ช่วงเย็น ขี้เล่นที่สุด
+    "night":     (21, 24),  # เริ่มพักผ่อน
+    "late_night": (0, 5),   # หลับลึก
+}
+
+TIME_PERIOD_TH = {
+    "dawn": "รุ่งเช้า",
+    "morning": "เช้า",
+    "afternoon": "บ่าย",
+    "evening": "เย็น",
+    "night": "กลางคืน",
+    "late_night": "ดึก",
+}
+
+
+def get_time_period(hour: int | None = None) -> str:
+    if hour is None:
+        hour = datetime.now().hour
+    for period, (start, end) in TIME_PERIODS.items():
+        if start <= hour < end:
+            return period
+    return "late_night"
 
 
 @dataclass
@@ -18,26 +48,65 @@ class CatState:
     # Possible moods: happy, playful, sleepy, hungry, annoyed, curious, content
     _last_update: float = field(default_factory=time.time, repr=False)
 
-    # Decay/growth rates per second
-    HUNGER_RATE = 0.002       # Gets hungrier over time
-    ENERGY_DECAY = 0.001      # Gets tired over time
-    CURIOSITY_RATE = 0.0015   # Gets more curious over time
-    HAPPINESS_DECAY = 0.0005  # Happiness slowly fades
-    BOND_DECAY = 0.0001       # Bond slowly weakens without interaction
+    # Base decay/growth rates per second
+    HUNGER_RATE = 0.002
+    ENERGY_DECAY = 0.001
+    CURIOSITY_RATE = 0.0015
+    HAPPINESS_DECAY = 0.0005
+    BOND_DECAY = 0.0001
+
+    @property
+    def time_period(self) -> str:
+        return get_time_period()
+
+    @property
+    def time_period_th(self) -> str:
+        return TIME_PERIOD_TH.get(self.time_period, "")
 
     def clamp(self, value: float) -> float:
         return max(0.0, min(1.0, value))
 
+    def _time_multipliers(self) -> dict[str, float]:
+        """Adjust rates based on real time of day."""
+        period = self.time_period
+        if period == "morning":
+            # เช้า: หิวเร็ว ตื่นตัว อยากรู้อยากเห็น
+            return {"hunger": 1.5, "energy": 0.5, "curiosity": 1.8, "happiness": 0.8}
+        elif period == "afternoon":
+            # บ่าย: ง่วง พลังงานลดเร็ว หิวหลังกินข้าว
+            return {"hunger": 1.0, "energy": 2.0, "curiosity": 0.5, "happiness": 0.8}
+        elif period == "evening":
+            # เย็น: ขี้เล่นมาก พลังงานดี อยากรู้อยากเห็น
+            return {"hunger": 1.3, "energy": 0.7, "curiosity": 1.5, "happiness": 0.3}
+        elif period == "night":
+            # กลางคืน: เริ่มง่วง อยากพัก
+            return {"hunger": 0.8, "energy": 1.8, "curiosity": 0.3, "happiness": 1.0}
+        elif period == "late_night":
+            # ดึก: หลับ พลังงานฟื้นตัว
+            return {"hunger": 0.5, "energy": -1.5, "curiosity": 0.2, "happiness": 0.5}
+        elif period == "dawn":
+            # รุ่งเช้า: เริ่มตื่น ยังงัวเงีย
+            return {"hunger": 1.2, "energy": -0.5, "curiosity": 1.0, "happiness": 0.7}
+        return {"hunger": 1.0, "energy": 1.0, "curiosity": 1.0, "happiness": 1.0}
+
     def tick(self):
-        """Update states based on elapsed time since last update."""
+        """Update states based on elapsed time and real time of day."""
         now = time.time()
         elapsed = now - self._last_update
         self._last_update = now
 
-        self.hunger = self.clamp(self.hunger + self.HUNGER_RATE * elapsed)
-        self.energy = self.clamp(self.energy - self.ENERGY_DECAY * elapsed)
-        self.curiosity = self.clamp(self.curiosity + self.CURIOSITY_RATE * elapsed)
-        self.happiness = self.clamp(self.happiness - self.HAPPINESS_DECAY * elapsed)
+        m = self._time_multipliers()
+
+        self.hunger = self.clamp(self.hunger + self.HUNGER_RATE * elapsed * m["hunger"])
+
+        # energy multiplier: positive = drains faster, negative = recovers
+        if m["energy"] < 0:
+            self.energy = self.clamp(self.energy + self.ENERGY_DECAY * elapsed * abs(m["energy"]))
+        else:
+            self.energy = self.clamp(self.energy - self.ENERGY_DECAY * elapsed * m["energy"])
+
+        self.curiosity = self.clamp(self.curiosity + self.CURIOSITY_RATE * elapsed * m["curiosity"])
+        self.happiness = self.clamp(self.happiness - self.HAPPINESS_DECAY * elapsed * m["happiness"])
         self.bond_level = self.clamp(self.bond_level - self.BOND_DECAY * elapsed)
 
         # Hunger and tiredness reduce happiness
